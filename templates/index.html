@@ -1,0 +1,58 @@
+<video id="video"></video>
+<script>
+	(function() {
+		"use strict";
+		var streaming = false,
+		video = document.getElementById("video"),
+		canvas = document.createElement("canvas"),
+		ctx = canvas.getContext('2d'),
+		width = 320,
+		height = 0,
+		mediaOptions = {video: true, audio: false},
+		quality = 0.7,
+		xmlhttp = new XMLHttpRequest();
+
+		navigator.getMedia = (navigator.getUserMedia ||
+							navigator.webkitGetUserMedia ||
+							navigator.mozGetUserMedia ||
+							navigator.msGetUserMedia);
+		
+		navigator.getMedia(mediaOptions, success, function(err) {
+			console.log("An error occured! " + err);
+		});
+		function success(stream) {
+			if(navigator.mozGetUserMedia){
+				video.mozSrcObject = stream;
+			}
+			else{
+				var vendorURL = window.URL || window.webkitURL;
+				video.src = vendorURL.createObjectURL(stream);
+			}
+			video.play();
+			window.setInterval(toCanvas, 3000);
+		}
+		// resize
+		video.addEventListener('canplay', function(ev){
+			if(!streaming) {
+				height = video.videoHeight / (video.videoWidth/width);
+				video.setAttribute('width', width);
+				video.setAttribute('height', height);
+				canvas.setAttribute('width', width);
+				canvas.setAttribute('height', height);
+				streaming = true;
+			}
+		}, false);
+
+		function toCanvas(){
+			canvas.width = width;
+			canvas.height = height;
+
+			ctx.drawImage(video, 0, 0, width, height);
+			var data = encodeURIComponent(canvas.toDataURL("image/jpeg", quality));
+			xmlhttp.open("POST", "/image", true);
+			xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+			console.log(data);
+			xmlhttp.send("image="+data);
+		}
+	})();
+</script>
